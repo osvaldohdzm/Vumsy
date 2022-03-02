@@ -1,12 +1,13 @@
+
 import argparse
 import base64
 import docx
 import html_to_json
-import json
-import json
+import inflect
 import json
 import locale
 import logging
+import math
 import mistune
 import numpy as np
 import os
@@ -18,13 +19,12 @@ import re
 import requests
 import shutil
 import sys
-import sys
-import sys
 import unidecode
 import win32clipboard as clip
 import win32com
 import win32com.client as win32
 import xmltojson
+from win32com.client import constants
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from docx import Document
@@ -33,7 +33,10 @@ from docx.oxml.ns import nsdecls
 from docx.shared import RGBColor
 from num2words import num2words
 from os.path import abspath
-from win32com.client import constants
+
+# Program constants definition
+constants ={} 
+constants["title-style"] = "Título 1" # Dependes language english or spanish
 
 class bcolors:
     HEADER = '\033[95m'
@@ -46,7 +49,185 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-#pdb.set_trace()
+def num2ordinalabrev(N):
+  word = num2ordinalapocade(N)
+  return word[len(word) - 2:]
+
+def num2ordinalapocade(N):
+  Unidad=["", "primer", "segundo", "tercer","cuarto", "quinto", "sexto", "septimo", "octavo", "noveno"]
+  Decena=["", "decimo", "vigesimo", "trigesimo", "cuadragesimo","quincuagesimo", "sexagesimo", "septuagesimo", "octogesimo", "nonagesimo"]
+  Centena=["", "centesimo", "ducentesimo", "tricentesimo", " cuadringentesimo", " quingentesimo", " sexcentesimo", " septingentesimo"," octingentesimo", " noningentesimo"]
+  u= N % 10
+  d=int(math.floor(N/10))%10
+  c=int(math.floor(N/100))
+  if(N>=100): 
+   return(Centena[c]+" "+Decena[d]+" "+Unidad[u])
+  else:
+   if(N>=10):
+    return(Decena[d]+" "+Unidad[u])
+   else:
+    return(Unidad[N])
+
+def format_range_remediation_status(crange,wb):
+   selection = wb.Worksheets(1).Range(crange)
+   # Add condition
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"REMEDIADA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.ThemeColor = win32.constants.xlThemeColorAccent6
+   selection.FormatConditions(1).Interior.TintAndShade = 0.59996337778862
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"PARCIALMENTE REMEDIADA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.ThemeColor = win32.constants.xlThemeColorAccent4
+   selection.FormatConditions(1).Interior.TintAndShade = 0.599963377788629
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"NO REMEDIADA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.ThemeColor = win32.constants.xlThemeColorAccent2
+   selection.FormatConditions(1).Interior.TintAndShade = 0.399945066682943
+   
+def format_range_risk_leve(crange,wb):
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"CRÍTICA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.Color = 192
+   selection.FormatConditions(1).Font.ThemeColor = win32.constants.xlThemeColorDark1
+   selection.FormatConditions(1).Font.TintAndShade = 0
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"ALTA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.Color = 255
+   selection.FormatConditions(1).Font.ThemeColor = win32.constants.xlThemeColorDark1
+   selection.FormatConditions(1).Font.TintAndShade = 0
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"MEDIA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.Color = 49407
+   selection.FormatConditions(1).Font.ThemeColor = win32.constants.xlThemeColorDark1
+   selection.FormatConditions(1).Font.TintAndShade = 0
+   selection.FormatConditions(1).Font.ColorIndex = win32.constants.xlAutomatic
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"BAJA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.Color = 65535
+   selection.FormatConditions(1).Font.TintAndShade = 0
+   selection.FormatConditions(1).Font.ColorIndex = win32.constants.xlAutomatic
+   # Add condition
+   selection = wb.Worksheets(1).Range(crange)
+   selection.FormatConditions.Add(Type=win32.constants.xlCellValue, Operator =win32.constants.xlEqual, Formula1 ="=\"INFORMATIVA\"")
+   selection.FormatConditions(selection.FormatConditions.Count).SetFirstPriority()
+   selection.FormatConditions(1).Interior.PatternColorIndex = win32.constants.xlAutomatic
+   selection.FormatConditions(1).Interior.Color = 11382189
+   selection.FormatConditions(1).Font.ThemeColor = win32.constants.xlThemeColorLight1
+   selection.FormatConditions(1).Font.TintAndShade = 0
+   selection.FormatConditions(1).Font.ColorIndex = win32.constants.xlAutomatic
+   
+def get_risk_level_from_score(risk_score):
+  level = 'OTRO'
+  if (float(risk_score) >= 9.0):
+      level = 'CRÍTICA'
+  elif (float(risk_score) >= 7.0):
+      level = 'ALTA'
+  elif (float(risk_score) >= 4.0):
+      level = 'MEDIA'
+  elif (float(risk_score) >= 0.1):
+      level = 'BAJA'
+  elif (float(risk_score) <= 0.0):
+      level = 'INFORMATIVA'
+  return level
+
+def add_qa_vulns_to_tablefile(doct_path,wordapp, qa_data):
+  if qa_data:
+      doct = wordapp.Documents.Open(doct_path)
+      doct.Activate()
+      wordapp.Selection.EndKey(Unit=win32.constants.wdStory)
+      wordapp.Selection.TypeParagraph
+      wordapp.Selection.TypeText(Text='Vulnerabilidades asociadas al ambiente QA') 
+      wordapp.Selection.HomeKey(Unit=win32.constants.wdLine, Extend=win32.constants.wdExtend)
+      wordapp.Selection.Style = doct.Styles(constants["title-style"])
+      wordapp.Selection.EndKey(Unit=win32.constants.wdLine)
+      wordapp.Selection.TypeText(Text='\r') 
+      wordapp.Selection.Style = wordapp.ActiveDocument.Styles("Normal")
+      wordapp.Selection.TypeText(Text='<<qa_vulnerabilities_list>>\r') 
+      qa_vuln_list = []
+      try:
+          for item in qa_data:
+              qa_vuln_list.append(item) 
+          wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
+          wordapp.Selection.Find.Execute('<<qa_vulnerabilities_list>>') 
+          wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
+          wordapp.Selection.Font.Name = "Montserrat"
+          wordapp.Selection.Text = '\n'.join(qa_vuln_list)
+      except Exception as e: 
+          print(e) 
+      doct.SaveAs(doct_path)
+      doct.Close(False)
+
+def create_vuln_matrix(vulns_list, output_folder, file_name_no_ext):
+    if vulns_list:
+        try:
+            vulnerabilities_tables = []            
+            sorted_asc_vulns = vulns_list      
+            sorted_asc_vulns.sort(key=lambda x: float(x["<<vulnerability_risk_score>>"]),reverse = True)
+            for vunl in sorted_asc_vulns:
+                # Upper Case letters
+                vunl['<<vulnerability_name_upper>>'] = vunl['<<vulnerability_name>>'].upper()
+            visible_mode_win32com = True
+            f_name = file_name_no_ext+".xlsx"
+            filename = os.path.join(output_folder,f_name) 
+            logging.info(filename)
+            sheetname = 'Vulnerabilidades'
+            excel = win32.gencache.EnsureDispatch('Excel.Application')
+            excel.Visible = visible_mode_win32com
+            excel.DisplayAlerts = False
+            wb = excel.Workbooks.Add()
+            wb.Worksheets(1).Name = sheetname
+            wb.Worksheets(1).Range("A1").FormulaR1C1 = "VULNERABILIDAD"
+            wb.Worksheets(1).Range("B1").FormulaR1C1 = "NIVEL DE RIESGO"
+            wb.Worksheets(1).Range("C1").FormulaR1C1 = "ESTADO"
+            wb.Worksheets(1).Range("D1").FormulaR1C1 = "OBSERVACIONES"
+            wb.Worksheets(1).ListObjects.Add(win32.constants.xlSrcRange, wb.Worksheets(1).Range("$A$1:$D$2"), win32.constants.xlYes,win32.constants.xlYes).Name = "TABLAVULNS"
+            wb.Worksheets(1).ListObjects("TABLAVULNS").TableStyle = "TableStyleLight8"
+            format_range_remediation_status("C2",wb)
+            format_range_risk_leve("B2",wb)
+            # Fill format
+            index = 2
+            for vunl in sorted_asc_vulns:
+               wb.Worksheets(1).Range("A"+str(index)).Value = vunl['<<vulnerability_name_upper>>'] 
+               index = index + 1 
+            # Set risk levels
+            index = 2
+            for vunl in sorted_asc_vulns:
+               wb.Worksheets(1).Range("B"+str(index)).Value =  get_risk_level_from_score(vunl['<<vulnerability_risk_score>>']) 
+               index = index + 1 
+            # Set status default
+            index = 2
+            for vunl in sorted_asc_vulns:
+               wb.Worksheets(1).Range("C"+str(index)).Value =  "NO REMEDIADA"
+               index = index + 1 
+            # Adjust table wdith cells to fit
+
+            wb.Worksheets(1).ListObjects("TABLAVULNS").Range.Columns.AutoFit()
+            wb.SaveAs(filename)    
+            wb.Close(False)
+            excel.Application.Quit() 
+        except Exception as e: 
+            print(e)
+            logging.info(e) 
+
 
 def rgbToInt(rgb):
     colorInt = rgb[0] + (rgb[1] * 256) + (rgb[2] * 256 * 256)
@@ -82,7 +263,6 @@ def merge_docx1(files, final_docx_name, visible_mode_win32com, output_folder):
     word = win32.gencache.EnsureDispatch("Word.Application")
     word.Visible = visible_mode_win32com
     word.DisplayAlerts = False
-
     # New blank document
     new_document = word.Documents.Add()
     for fn in files:
@@ -96,28 +276,24 @@ def merge_docx1(files, final_docx_name, visible_mode_win32com, output_folder):
         new_document.Range()
         word.Selection.Delete()
         word.Selection.Paste() 
-
     clip.OpenClipboard()
     clip.EmptyClipboard()
     clip.CloseClipboard()
     # Save the final file and close the Word application
     new_document.SaveAs(os.path.join(output_folder,final_docx_name))    
     new_document.Close(False)
-
     doc = docx.Document(os.path.join(output_folder,final_docx_name))
     for table in doc.tables:
         shading_elm_1 = parse_xml(r'<w:shd {} w:fill="4C4C4C"/>'.format(nsdecls('w')))
         table.cell(0, 0)._tc.get_or_add_tcPr().append(shading_elm_1)
         shading_elm_2 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
         table.cell(0, 1)._tc.get_or_add_tcPr().append(shading_elm_2)
-  
         if table.cell(0, 2).text != "-":
            risk_score_table = float(table.cell(0, 2).text)
         else:
            risk_score_table = 0    
         paragraph = table.cell(0, 2).paragraphs[0]
         paragraph.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-
         if(risk_score_table >= 0.1 and  risk_score_table <= 3.9):
             shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FFFF00"/>'.format(nsdecls('w')))
             table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
@@ -139,8 +315,6 @@ def merge_docx1(files, final_docx_name, visible_mode_win32com, output_folder):
                 run.font.color.rgb = RGBColor(255,255,255)  
             shading_elm_3 = parse_xml(r'<w:shd {} w:fill="ADADAD"/>'.format(nsdecls('w')))
             table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-            
-        
         shading_elm_4 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
         table.cell(5, 0)._tc.get_or_add_tcPr().append(shading_elm_4)
         shading_elm_5 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
@@ -165,22 +339,159 @@ def split_text_before_point(text):
   else:
     return parts[0]+'.'
 
+def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_directory):
+  
 
+  dn = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+  # SOW GENERATION
+  no_targets = len(data["<<scope>>"])
+  concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
+  concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
+  concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
+
+  
+  
+  Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
+   '<<Fecha_mes_y_año>>':data['<<date_format_02>>'], 
+   '<<Folio>>':data['<<analysis_id>>'],
+   '<<Fecha_ddmmaa_encabezado>>':data['<<request_date_format_02>>'],
+   '<<Dirección_IP>>':sow_targets_ips_string,
+   '<<request_folio>>':data['<<request_folio>>'],
+   '<<Folio>>':data['<<analysis_id>>'],
+   '<<analysis_version_format_02>>': data['<<analysis_version_format_02>>'],
+   '<<Concordancia_1>>':concordancia_1,
+   '<<Nombre_del_aplicativo_En_antecedentes>>':data['<<name_app>>'],
+   '<<Nombre_del_servidor>>':data['<<app_url>>'].replace("http://", "").replace("https://", ""),
+   '<<Nombre_del_aplicativo_Tabla>>':data['<<name_app>>'], 
+   '<<Fechas_de_inicio>>': data['<<start_date>>'],
+   '<<Fecha_Fin>>': data['<<finish_date>>'],
+   '<<Fecha_tentativa_de_inicio>>': data['<<start_date_planned>>'],
+   '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
+   '<<Concordancia_2>>': concordancia_2, 
+   '<<URL_Acuerdos_tabla3>>': sow_targets_urls,
+   '<<Realiza_Firmas_de_aceptación>>': data['<<reviewer_01>>'],
+   '<<Concordancia_3>>':concordancia_3})
+  
+  sow_template = os.path.join(dn,'templates',data['<<template_name_02>>'])
+  sow_file_name = 'SOW - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
+  sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
+  doc = wordapp.Documents.Open(sow_template)
+  doc.Activate()
+  
+  wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
+  for From in Dict.keys():
+      wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
+      wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll) 
+      wordapp.ActiveWindow.ActivePane.View.SeekView = win32.constants.wdSeekCurrentPageHeader
+      wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll)     
+  
+  wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "1")
+  wordapp.ActiveDocument.SaveAs(sow_full_file_name)
+  doc.Close(False)
+
+def add_bad_practices(wordapp, bad_practices):
+  if bad_practices:
+     bad_practices_list = []
+     try:
+        for item in bad_practices:                           
+           bad_practices_list.append(item) 
+        
+        wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
+        wordapp.Selection.Find.Execute('<<bad_practices_list>>')
+        wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
+        wordapp.Selection.Font.Name = "Montserrat"
+        wordapp.Selection.Text = '\n'.join(bad_practices_list)
+     except Exception as e: 
+             print(e)
+  else: 
+      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "BadBookMark").Delete() 
+
+def add_qa_vulnerabilities(wordapp, qa_data):
+  if qa_data:
+    qa_vuln_list = []
+    try:
+        for item in qa_data:
+            qa_vuln_list.append(item) 
+        wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
+        wordapp.Selection.Find.Execute('<<qa_vulnerabilities_list>>') 
+        wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
+        wordapp.Selection.Font.Name = "Montserrat"
+        wordapp.Selection.Text = '\n'.join(qa_vuln_list)
+    except Exception as e: 
+        print(e) 
+  else:
+    wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "QABookMark").Delete() 
+
+def generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory_path, templates_path):
+    count = 1
+    vulnerabilities_tables = []   
+    for vunl in sorted_asc_vulns:              
+        table_template = os.path.join(templates_path,'template-sre-vulns-table.docx')                
+        wordapp = win32.gencache.EnsureDispatch("Word.Application")
+        wordapp.Visible = visible_mode_win32com
+        wordapp.DisplayAlerts = False
+        doc = wordapp.Documents.Open(table_template)
+        doc.Activate()
+        for From in vunl.keys(): 
+            wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)   
+            item_replace = vunl[From]
+            if From != "<<vulnerability_evidence_note>>" and From !="<<vulnerability_evidence_image_path>>" and From !="<<vulnerability_evidences>>":
+                if item_replace == 0:
+                  item_replace = "-"
+                try:
+                    wordapp.Selection.Find.Execute(From) 
+                    wordapp.Selection.Text = item_replace
+                except Exception as e: 
+                    print(e)
+            wordapp.Selection.EndKey(Unit=win32.constants.wdStory)
+        try:  
+            for evidence in vunl['<<vulnerability_evidences>>'] :  
+                wordapp.Selection.EndKey(Unit=win32.constants.wdStory)       
+                wordapp.Selection.TypeText(Text='\r') # New paragraph insted of Typeparagrah
+                image_path = evidence['<<vulnerability_evidence_image_path>>'] 
+                wordapp.Selection.ParagraphFormat.Alignment = win32.constants.wdAlignParagraphCenter                
+                shape = wordapp.Selection.InlineShapes.AddPicture(FileName=image_path,LinkToFile=False, SaveWithDocument=True )
+                shape.LockAspectRatio = True
+                #wordapp.Selection.EndOf
+                wordapp.Selection.Collapse(Direction=win32.constants.wdCollapseEnd)
+                wordapp.Selection.TypeText(Text='\r') # New paragraph insted of Typeparagrah
+                wordapp.Selection.ParagraphFormat.Alignment = win32.constants.wdAlignParagraphJustify
+                #shape.Width = 450; # Change width works 
+                wordapp.Selection.TypeText(Text=evidence['<<vulnerability_evidence_note>>'])
+        except Exception as e: 
+            print(e)
+        if (count  <  len(sorted_asc_vulns)):
+            wordapp.Selection.EndKey(Unit=win32.constants.wdStory) 
+            wordapp.Selection.InsertBreak(Type=win32.constants.wdPageBreak) 
+        
+        file_name = os.path.join(tmp_directory_path,'Table_'+ str(count)+ ".docx")
+        vulnerabilities_tables.append(file_name)
+        wordapp.ActiveDocument.SaveAs(file_name)
+        doc.Close(SaveChanges=True)
+        count = count + 1
+    return vulnerabilities_tables
+    
 def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory):
-   if '_id' in data:
-      del data['_id']
+   if not os.path.exists(tmp_directory):
+    os.makedirs(tmp_directory)
 
+   if '_id' in data:
+      del data['_id']      
    if data["<<vulnerabilities>>"]:
       for i in range(len(data["<<vulnerabilities>>"])):       
           for k in range(len(data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"])):
-              vulnerability_name = unidecode.unidecode(data["<<vulnerabilities>>"][i]["<<vulnerability_name>>"]).lower().replace(" ", "_")
-              
+              vulnerability_name = unidecode.unidecode(data["<<vulnerabilities>>"][i]["<<vulnerability_name>>"]).lower().replace(" ", "_")              
               image = os.path.join(tmp_directory,"vuln_{}_{}_ev_{}.png".format(str(i+1),vulnerability_name,str(k+1)))           
               fh = open(image, "wb")
               fh.write(base64.b64decode(data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"]))
               fh.close()
               data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"] = image            
-  
+   
+   # Add calculated fields 
+   data['<<analysis_version_format_01>>'] = "{}{} {}".format(str(data['<<analysis_version>>']),num2ordinalabrev(int(data['<<analysis_version>>'])) ,"análisis")
+   data['<<analysis_version_format_02>>'] = "{}".format(num2ordinalapocade(int(data['<<analysis_version>>'])))
+
 
    # Opening JSON file
    #with open(analysis_filename, encoding='utf-8') as json_file:
@@ -211,7 +522,6 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    sow_target_url_list = []
    sow_targets_ips_string = []
    sow_targets_urls = []
-
 
 
    try:
@@ -259,8 +569,6 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    
    sow_targets_ips_dict = list(dict.fromkeys(sow_target_ip_list))
    sow_targets_urls_dict = list(dict.fromkeys(sow_target_url_list))
-   print(str(sow_targets_ips_dict))
-   print(str(sow_targets_urls_dict))
    if len(sow_targets_ips_dict) > 1:      
       sow_targets_ips_string  = ", ".join(sow_targets_ips_dict[:-1]) +" y "+sow_targets_ips_dict[-1]
    elif len(sow_targets_ips_dict) == 1:
@@ -296,20 +604,26 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
       # Ver marcadores ocultos para ver los de los titulos      
       executive_resume = "Con el propósito de identificar las vulnerabilidades potenciales que pudieran comprometer la seguridad de la Información, se realizó el <<analysis_version_format_02>> análisis dinámico del aplicativo, sin embargo, no se identificaron nuevas vulnerabilidades."
       wordapp.Selection.Find.Execute('<<executive_resume>>') 
-      wordapp.Selection.TypeText(Text=executive_resume)
-    
-      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "ReportStructureBookMark").Delete() 
+      wordapp.Selection.TypeText(Text=executive_resume)     
+      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "ReportStructureBookMark")
       wordapp.Selection.Style = wordapp.ActiveDocument.Styles("Normal")
-      wordapp.Selection.TypeText(Text="Se observa que las vulnerabilidades identificadas en el <<previous_analysis_version_format_03>> análisis dinámico aplicado al portal web <<name_app>> se encuentran remediadas.\rPara dar continuidad en la seguridad del aplicativo, se recomiendan las siguientes acciones:\r")
+      if data['<<previous_analysis_version_format_03>>']:
+        wordapp.Selection.TypeText(Text="Se observa que las vulnerabilidades identificadas en el <<previous_analysis_version_format_03>> análisis dinámico aplicado al portal web <<name_app>> se encuentran remediadas.\rPara dar continuidad en la seguridad del aplicativo, se recomiendan las siguientes acciones:\r")
+      else: 
+        wordapp.Selection.TypeText(Text="Se observa que las vulnerabilidades identificadas en el análisis dinámico aplicado al portal web <<name_app>> se encuentran remediadas.\rPara dar continuidad en la seguridad del aplicativo, se recomiendan las siguientes acciones:\r")
       list_suggestions_empty_report = ["Mantener actualizado los componentes del aplicativo, frameworks y API´s.","Actualizar periódicamente las credenciales de acceso y privilegios de usuarios que realizan cambios críticos en la infraestructura o manejan información sensible.","Realizar respaldos periódicos al aplicativo.","Mantener activo y respaldado los logs de cada componente del aplicativo."]
       wordapp.Selection.TypeParagraph
       wordapp.Selection.Font.Name = "Montserrat"
       wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
+      wordapp.Selection.ParagraphFormat.LeftIndent = 36
       wordapp.Selection.Text = '\n'.join(list_suggestions_empty_report)
       wordapp.Selection.Font.Name = "Montserrat"
-      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "VulnesPartBookMark").Delete() 
+      add_qa_vulnerabilities(wordapp,data['<<qa_vulnerabilities>>'])  
+      add_bad_practices(wordapp,data['<<bad_practices_list>>'])  
+      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "VulnesPartBookMark").Delete()  
+      wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "CriticityAndResumeBookMark").Delete()   
    else:
-      if impact_list:
+      if impact_list and not list(set(impact_list))[0] == "-":
           executive_resume = "Con el propósito de identificar las vulnerabilidades potenciales que pudieran comprometer la seguridad de la Información, se realizó el <<analysis_version_format_02>> análisis dinámico del aplicativo. Las vulnerabilidades identificadas podrían permitir a un atacante <<risk_resume_list>>. Estos se clasifican con un riesgo <<level_max>>, por lo que se considera que se deben realizar <<executive_resume_part1>> a la <<executive_resume_part2>> de los sistemas involucrados."
       else:
           executive_resume = "Con el propósito de identificar las vulnerabilidades potenciales que pudieran comprometer la seguridad de la Información, se realizó el <<analysis_version_format_02>> análisis dinámico del aplicativo. Las vulnerabilidades identificadas podrían permitir a un atacante <<risk_resume_list>>. Estos se clasifican con un riesgo <<level_max>>, por lo que se considera que se deben realizar <<executive_resume_part1>> a los sistemas involucrados."
@@ -331,14 +645,15 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
           wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
    except Exception as e: 
            print(e)  
-           
+   
+
  
    wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
 
 
    
 
-   print("DEBUGA")
+   logging.info("Debug point A")
    wordapp.ActiveDocument.SaveAs(os.path.join(dn,tmp_directory,name_file))
    doc.TablesOfContents(1).Update()
    wordapp.ActiveDocument.Save()
@@ -348,85 +663,44 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
 
    if data['<<vulnerabilities>>']:
         try:
-            count = 1            
-            vulnerabilities_tables = []            
+            count = 1
             sorted_asc_vulns = data['<<vulnerabilities>>']
-         
-
             sorted_asc_vulns.sort(key=lambda x: float(x["<<vulnerability_risk_score>>"]),reverse = True)
 
             for vunl in sorted_asc_vulns:
                 # Upper Case letters
                 vunl['<<vulnerability_name_upper>>'] = vunl['<<vulnerability_name>>'].upper()
 
-            count = 1
-            for vunl in sorted_asc_vulns:              
-                table_template = os.path.join(dn,'templates','template-sre-vulns-table.docx')                
-                wordapp = win32.gencache.EnsureDispatch("Word.Application")
-                wordapp.Visible = visible_mode_win32com
-                wordapp.DisplayAlerts = False
-                doc = wordapp.Documents.Open(table_template)
-                doc.Activate()
-                wordapp.Selection.HomeKey(Unit=win32.constants.wdStory) 
-                    
-                    
-                
-                for From in vunl.keys(): 
-                    wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)     
-                                 
-                    item_replace = vunl[From]
-                              
-                   
-                    if From != "<<vulnerability_evidence_note>>" and From !="<<vulnerability_evidence_image_path>>" and From !="<<vulnerability_evidences>>":
-                        if item_replace == 0:
-                          item_replace = "-"
-                        try:
-                            wordapp.Selection.Find.Execute(From) 
-                            wordapp.Selection.Text = item_replace
-                        except Exception as e: 
-                            print(e)
-                    wordapp.Selection.EndKey(Unit=win32.constants.wdStory)
-         
-                try:   
-                    
-                    for evidence in vunl['<<vulnerability_evidences>>'] :  
-                        wordapp.Selection.EndKey(Unit=win32.constants.wdStory)                                          
-                        image_path = evidence['<<vulnerability_evidence_image_path>>'] 
-                        wordapp.Selection.TypeParagraph
-                        shape = wordapp.Selection.InlineShapes.AddPicture(FileName=image_path,LinkToFile=False, SaveWithDocument=True )
-                        shape.LockAspectRatio = True
-                        #shape.Width = 450; # Change width works 
-                        wordapp.Selection.TypeText(Text='\r'+evidence['<<vulnerability_evidence_note>>']+'\r')
-                        wordapp.ActiveDocument.Paragraphs.Last.Alignment = win32.constants.wdAlignParagraphJustify
-                except Exception as e: 
-                    print(e)
-
-
-                if (count  <  len(data['<<vulnerabilities>>'])):
-                    wordapp.Selection.EndKey(Unit=win32.constants.wdStory) 
-                    wordapp.Selection.InsertBreak(Type=win32.constants.wdPageBreak)  
-            
-                vulnerabilities_tables.append(os.path.join(dn,tmp_directory,'Table_'+ str(count)+ ".docx"))
-                wordapp.ActiveDocument.SaveAs(os.path.join(dn,tmp_directory,'Table_'+ str(count)+ ".docx"))
-                doc.Close(SaveChanges=True)
-                count = count + 1
-            
-            vulns_table_file_name =   'Vulnerabilities {} {} {}{}'.format(data['<<analysis_id>>'],data ['<<name_app>>'],data['<<analysis_version_format_01>>'],".docx")
+            vulns_table_file_name =   'TB - {} {} {}{}'.format(data['<<analysis_id>>'],data ['<<name_app>>'],data['<<analysis_version_format_01>>'],".docx")
             vulns_table_file_name = vulns_table_file_name.replace("/", "-").replace('\r', '')
             full_vulns_table_file_name = os.path.join(dn,tmp_directory,vulns_table_file_name).replace('\r', '')
-            
-            #print(vulns_table_file_name)
-            
+            tmp_directory_path = os.path.join(dn,tmp_directory)
+            templates_path = os.path.join(dn,'templates')   
+            vulnerabilities_tables = generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory, templates_path)
             merge_docx1(vulnerabilities_tables,vulns_table_file_name, visible_mode_win32com = visible_mode_win32com, output_folder = os.path.join(dn,tmp_directory))
-
-            
             
             doca = wordapp.Documents.Open(os.path.join(dn,tmp_directory,name_file))
-            doca.Activate()
-            
+            doca.Activate()            
             wordapp.Selection.Find.Execute('<<vulnerabilities_tables>>') 
             wordapp.Selection.InsertFile(FileName=full_vulns_table_file_name, Range="", ConfirmConversions=False, Link=False, Attachment=False)
-            wordapp.Selection.InsertBreak(Type=win32.constants.wdPageBreak)  
+            # Delete terminal characters
+            
+            #wordapp.Selection.MoveLeft(Unit=win32.constants.wdCharacter, Count=2)  
+            #wordapp.Selection.Delete(Unit=win32.constants.wdCharacter, Count=2)
+            #wordapp.Selection.Find.Execute('<<break_page>>', False, False, False, False, False, True, win32.constants.wdFindContinue, False, "^m", win32.constants.wdReplaceAll) 
+            
+            #wordapp.Selection.InsertBreak(Type=win32.constants.wdSectionBreakContinuous)
+            wordapp.Selection.MoveLeft(Unit=win32.constants.wdCharacter, Count=2) 
+            wordapp.Selection.Delete(Unit=win32.constants.wdCharacter, Count=2)
+            #wordapp.Selection.MoveRight(Unit=win32.constants.wdCharacter, Count=1)              
+            #wordapp.Selection.MoveLeft(Unit=win32.constants.wdCharacter, Count=1) 
+            #wordapp.Selection.Delete(Unit=win32.constants.wdCharacter, Count=3)
+            #wordapp.Selection.TypeText(Text="^m")
+            #wordapp.Selection.InsertBreak(Type=win32.constants.wdPageBreak)
+            
+            
+            
+            #wordapp.Selection.InsertBreak(Type=win32.constants.wdPageBreak)  
             # Go to start document
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
             wordapp.Selection.Find.Execute('<<level_max>>') 
@@ -438,11 +712,9 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
 
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
             wordapp.Selection.Find.Execute('<<risk_resume_list>>')
-            print("debug 1") 
-            print(str(risk_scores))
+            logging.info("Debug point 1")
+            
             wordapp.Selection.Text = ', '.join(risk_resume_list)
-            print(str(risk_resume_list))
-            print(str(impact_list))
             
             # Dictionary count
             dict_of_counts = {}
@@ -475,7 +747,8 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
                 else: 
                     impact_string = impact_list[0]
 
-            print("debug 2") 
+            logging.info("Debung point 2")
+            
             # Have to identify the index of the graph you want to handle
             if (wordapp.ActiveDocument.InlineShapes(1).Type == 12): # Is a chart
                 chart_wb = wordapp.ActiveDocument.InlineShapes(1).Chart.ChartData.Workbook
@@ -585,38 +858,9 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             wordapp.Selection.Find.Execute('<<recomendation_list>>') 
             wordapp.Selection.Text = '\n'.join(remediation_list)
 
-            if data['<<qa_vulnerabilities>>']:
-                qa_vuln_list = []
-                try:
-                    for item in data['<<qa_vulnerabilities>>']:
-                        qa_vuln_list.append(item) 
-                    wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
-                    wordapp.Selection.Find.Execute('<<qa_vulnerabilities_list>>') 
-                    wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
-                    wordapp.Selection.Font.Name = "Montserrat"
-                    wordapp.Selection.Text = '\n'.join(qa_vuln_list)
-                except Exception as e: 
-                    print(e) 
-            else:
-                wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "QABookMark").Delete() 
-
-
             
-            if data['<<bad_practices_list>>']:
-               bad_practices_list = []
-               try:
-                  for item in data['<<bad_practices_list>>']:                           
-                     bad_practices_list.append(item) 
-                  
-                  wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
-                  wordapp.Selection.Find.Execute('<<bad_practices_list>>')
-                  wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
-                  wordapp.Selection.Font.Name = "Montserrat"
-                  wordapp.Selection.Text = '\n'.join(bad_practices_list)
-               except Exception as e: 
-                       print(e)
-            else: 
-                wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "BadBookMark").Delete() 
+            add_qa_vulnerabilities(wordapp, data['<<qa_vulnerabilities>>'])
+            add_bad_practices(wordapp, data['<<bad_practices_list>>'])
               
             doca.TablesOfContents(1).Update() 
             wordapp.ActiveDocument.Save()
@@ -667,12 +911,23 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "1")
             wordapp.ActiveDocument.SaveAs(sow_full_file_name)
             doc.Close(False)
-            
-            try:
-               covx_to_pdf(os.path.join(dn,tmp_directory,name_file), os.path.join(dn,tmp_directory,name_file).replace('.docx', '.pdf'),wordapp)
-               covx_to_pdf(sow_full_file_name, sow_full_file_name.replace('.docx', '.pdf'),wordapp)
-            except Exception as e: 
-               print(e) 
+
+            # Add QA vulns to table vulns
+            doct = os.path.join(dn,tmp_directory,full_vulns_table_file_name)
+            add_qa_vulns_to_tablefile(doct,wordapp,data['<<qa_vulnerabilities>>'])
+            wordapp.Quit()
+           
+            # Convert o PDF optional
+            #try:
+            #   covx_to_pdf(os.path.join(dn,tmp_directory,name_file), os.path.join(dn,tmp_directory,name_file).replace('.docx', '.pdf'),wordapp)
+            #   covx_to_pdf(sow_full_file_name, sow_full_file_name.replace('.docx', '.pdf'),wordapp)
+            #except Exception as e: 
+            #   print(e)
+
+            # Create Vuln Matrix
+            matrix_file_name = 'MTZ - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
+            if data['<<vulnerabilities>>']:
+              create_vuln_matrix(data['<<vulnerabilities>>'], tmp_directory, matrix_file_name) 
             
             
             for f in vulnerabilities_tables:
@@ -686,61 +941,8 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
         except Exception as e: 
            print(e) 
    else:
-        
-        # SOW GENERATION
-        no_targets = len(data["<<scope>>"])
-        concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
-        concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
-        concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
-        
-        Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
-             '<<Fecha_mes_y_año>>':data['<<date_format_02>>'], 
-             '<<Folio>>':data['<<analysis_id>>'],
-             '<<Fecha_ddmmaa_encabezado>>':data['<<request_date_format_02>>'],
-             '<<Dirección_IP>>':data['<<sow_target_ip>>'],
-             '<<analysis_version_format_02>>': data['<<analysis_version_format_02>>'],
-             '<<request_folio>>':data['<<request_folio>>'],
-             '<<Folio>>':data['<<analysis_id>>'],
-             '<<Concordancia_1>>':concordancia_1,
-             '<<Nombre_del_aplicativo_En_antecedentes>>':data['<<name_app>>'],
-             '<<Nombre_del_servidor>>':data['<<app_url>>'],
-             '<<Nombre_del_aplicativo_Tabla>>':data['<<name_app>>'], 
-             '<<Fechas_de_inicio>>': data['<<start_date>>'],
-             '<<Fecha_Fin>>': data['<<finish_date>>'],
-             '<<Fecha_tentativa_de_inicio>>': data['<<start_date_planned>>'],
-             '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
-             '<<Concordancia_2>>': concordancia_2, 
-             '<<URL_Acuerdos_tabla3>>': data['<<app_url>>'],
-             '<<Realiza_Firmas_de_aceptación>>': data['<<reviewer_01>>'],
-             '<<Concordancia_3>>':concordancia_3})
-
-        sow_template = os.path.join(dn,'templates',data['<<template_name_02>>'])
-        sow_file_name = 'SOW - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
-        sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
-        wordapp = win32.gencache.EnsureDispatch("Word.Application")
-        wordapp.Visible = visible_mode_win32com
-        wordapp.DisplayAlerts = False
-        doc = wordapp.Documents.Open(sow_template)
-        doc.Activate()
-        
-        wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
-        for From in Dict.keys():
-            wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
-            wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll) 
-            wordapp.ActiveWindow.ActivePane.View.SeekView = win32.constants.wdSeekCurrentPageHeader
-            wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll)     
-        
-        wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "1")
-        wordapp.ActiveDocument.SaveAs(sow_full_file_name)
-        doc.Close(SaveChanges=False)
-        
-        try:
-           covx_to_pdf(os.path.join(dn,tmp_directory,name_file), os.path.join(dn,tmp_directory,name_file).replace('.docx', '.pdf'),wordapp)
-           covx_to_pdf(sow_full_file_name, sow_full_file_name.replace('.docx', '.pdf'),wordapp)
-        except Exception as e: 
-           print(e) 
-
-   wordapp.Application.Quit() 
+    sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_directory)
+    wordapp.Quit()
 
    try:
       #print("Deleting {}...".format(win32com.__gen_path__))
@@ -749,7 +951,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
        print(e)
 
    
-
+   # Remove file from zip temporary folder
    for item in os.listdir(tmp_directory):
       if item.endswith(".png"):
         os.remove(os.path.join(tmp_directory, item))
@@ -760,11 +962,12 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    files_in_directory = os.listdir(tmp_directory)
    shutil.make_archive(zip_name, 'zip', tmp_directory)
 
-   print("DEBUG")
+   logging.info("Debug point")
+   
    for files in os.listdir(tmp_directory):
        path = os.path.join(tmp_directory, files)
        try:
-           shutil.rmtree(path)
+          shutil.rmtree(path)
        except OSError:
            os.remove(path)
 
@@ -865,15 +1068,12 @@ def markdown_tojson(markdown_filename):
                        subelement = subelement.find_next_sibling()
            vuln["<<"+key+">>"] = content            
            data_structured['<<vulnerabilities>>'].append(vuln) 
-           print()
-           print("New2 vuln appended "+ str(vuln)) 
-   
   
    count = 0
    count_vuln = 0
    for element in soup.find_all('h2'): 
        if element.find_previous_sibling('h1').text == "Vulnerabilities":  
-           print("Vulnerability: {}".format(element.text))
+           #print("Vulnerability: {}".format(element.text))
            next_element = element.find_next_sibling('h5')
            vulnerability_evidences = [] 
 
@@ -882,7 +1082,7 @@ def markdown_tojson(markdown_filename):
                vulnerability_evidence_note = "" 
                vulnerability_evidence_image_path = "" 
                content = ""
-               print("Evidence {}: {}".format(count,next_element.text))
+               #print("Evidence {}: {}".format(count,next_element.text))
                evidence_element = next_element.find_next_sibling(['h6','p'])
                
                while evidence_element.name == 'h6' or evidence_element.name == 'h2':
@@ -909,7 +1109,7 @@ def markdown_tojson(markdown_filename):
                                sub_tag_p = sub_tag_p.find_next_sibling(['h6','p']) 
                        evidence["<<vulnerability_evidence_note>>"] = content
                    if  evidence_element.name == 'h5' and evidence_element.text == "evidence":
-                       print("Agregando evidencia a la misma vulnerabilidad")
+                       #print("Agregando evidencia a la misma vulnerabilidad")
                        vulnerability_evidences.append(evidence)
                    
                    if evidence_element.find_next_sibling(['h6','h2','h5']) is not None:                
@@ -918,7 +1118,7 @@ def markdown_tojson(markdown_filename):
                        break
                
                vulnerability_evidences.append(evidence)
-               print("Evidence conent {}: {}".format(evidence["<<vulnerability_evidence_image_path>>"],evidence["<<vulnerability_evidence_note>>"]))
+               #print("Evidence conent {}: {}".format(evidence["<<vulnerability_evidence_image_path>>"],evidence["<<vulnerability_evidence_note>>"]))
                
                if next_element.find_next_sibling(['h5','h2']) is not None: 
                    count = count + 1               
