@@ -345,7 +345,7 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
   dn = os.path.dirname(os.path.abspath(sys.argv[0]))
 
   # SOW GENERATION
-  no_targets = len(data["<<scope>>"])
+  no_targets = data["<<no_targets>>"]
   concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
   concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
   concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
@@ -378,14 +378,53 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
   sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
   doc = wordapp.Documents.Open(sow_template)
   doc.Activate()
-  
+
   wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
+
   for From in Dict.keys():
       wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
       wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll) 
       wordapp.ActiveWindow.ActivePane.View.SeekView = win32.constants.wdSeekCurrentPageHeader
       wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll)     
-  
+  wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
+
+  # Remove format hipertext in character space
+  wordapp.Selection.Find.ClearFormatting
+  wordapp.Selection.Find.Replacement.ClearFormatting
+  wordapp.Selection.Find.Replacement.Font.Bold = False
+  wordapp.Selection.Find.Replacement.Font.Italic = False
+  wordapp.Selection.Find.Replacement.Font.Underline = win32.constants.wdUnderlineNone
+  wordapp.Selection.Find.Replacement.Font.Color = win32.constants.wdColorAutomatic
+  wordapp.Selection.Find.Text = "<space>"
+  wordapp.Selection.Find.Replacement.Text = " y "
+  wordapp.Selection.Find.Forward = True
+  wordapp.Selection.Find.Wrap = win32.constants.wdFindContinue
+  wordapp.Selection.Find.Format = True
+  wordapp.Selection.Find.MatchCase = False
+  wordapp.Selection.Find.MatchWholeWord = False
+  wordapp.Selection.Find.MatchWildcards = False
+  wordapp.Selection.Find.MatchSoundsLike = False
+  wordapp.Selection.Find.MatchAllWordForms = False
+  wordapp.Selection.Find.Execute(Replace=win32.constants.wdReplaceAll)
+
+  wordapp.Selection.Find.ClearFormatting
+  wordapp.Selection.Find.Replacement.ClearFormatting
+  wordapp.Selection.Find.Replacement.Font.Bold = False
+  wordapp.Selection.Find.Replacement.Font.Italic = False
+  wordapp.Selection.Find.Replacement.Font.Underline = win32.constants.wdUnderlineNone
+  wordapp.Selection.Find.Replacement.Font.Color = win32.constants.wdColorAutomatic
+  wordapp.Selection.Find.Text = "<coma>"
+  wordapp.Selection.Find.Replacement.Text = ", "
+  wordapp.Selection.Find.Forward = True
+  wordapp.Selection.Find.Wrap = win32.constants.wdFindContinue
+  wordapp.Selection.Find.Format = True
+  wordapp.Selection.Find.MatchCase = False
+  wordapp.Selection.Find.MatchWholeWord = False
+  wordapp.Selection.Find.MatchWildcards = False
+  wordapp.Selection.Find.MatchSoundsLike = False
+  wordapp.Selection.Find.MatchAllWordForms = False
+  wordapp.Selection.Find.Execute(Replace=win32.constants.wdReplaceAll)
+
   wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "1")
   wordapp.ActiveDocument.SaveAs(sow_full_file_name)
   doc.Close(False)
@@ -488,6 +527,8 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
               fh.close()
               data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"] = image            
    
+   # No Targets
+   data["<<no_targets>>"] = len(data["<<scope>>"])
    # Add calculated fields 
    data['<<analysis_version_format_01>>'] = "{}{} {}".format(str(data['<<analysis_version>>']),num2ordinalabrev(int(data['<<analysis_version>>'])) ,"análisis")
    data['<<analysis_version_format_02>>'] = "{}".format(num2ordinalapocade(int(data['<<analysis_version>>'])))
@@ -575,7 +616,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
       sow_targets_ips_string = sow_target_ip_list[0]
 
    if len(sow_targets_urls_dict) > 1:      
-      sow_targets_urls  = ", ".join(sow_targets_urls_dict[:-1]) +" y "+sow_targets_urls_dict[-1]
+      sow_targets_urls  = "<coma>".join(sow_targets_urls_dict[:-1]) +"<space>"+sow_targets_urls_dict[-1]
    elif len(sow_targets_urls_dict) == 1:
       sow_targets_urls = sow_target_url_list[0]
    
@@ -864,53 +905,9 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
               
             doca.TablesOfContents(1).Update() 
             wordapp.ActiveDocument.Save()
-
             doca.Close(SaveChanges=True)
             
-            # SOW GENERATION
-            no_targets = len(data["<<scope>>"])
-            concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
-            concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
-            concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
-            
-            Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
-             '<<Fecha_mes_y_año>>':data['<<date_format_02>>'], 
-             '<<Folio>>':data['<<analysis_id>>'],
-             '<<Fecha_ddmmaa_encabezado>>':data['<<request_date_format_02>>'],
-             '<<Dirección_IP>>':sow_targets_ips_string,
-             '<<request_folio>>':data['<<request_folio>>'],
-             '<<Folio>>':data['<<analysis_id>>'],
-             '<<analysis_version_format_02>>': data['<<analysis_version_format_02>>'],
-             '<<Concordancia_1>>':concordancia_1,
-             '<<Nombre_del_aplicativo_En_antecedentes>>':data['<<name_app>>'],
-             '<<Nombre_del_servidor>>':data['<<app_url>>'].replace("http://", "").replace("https://", ""),
-             '<<Nombre_del_aplicativo_Tabla>>':data['<<name_app>>'], 
-             '<<Fechas_de_inicio>>': data['<<start_date>>'],
-             '<<Fecha_Fin>>': data['<<finish_date>>'],
-             '<<Fecha_tentativa_de_inicio>>': data['<<start_date_planned>>'],
-             '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
-             '<<Concordancia_2>>': concordancia_2, 
-             '<<URL_Acuerdos_tabla3>>': sow_targets_urls,
-             '<<Realiza_Firmas_de_aceptación>>': data['<<reviewer_01>>'],
-             '<<Concordancia_3>>':concordancia_3})
-            
-
-            sow_template = os.path.join(dn,'templates',data['<<template_name_02>>'])
-            sow_file_name = 'SOW - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
-            sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
-            doc = wordapp.Documents.Open(sow_template)
-            doc.Activate()
-            
-            wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
-            for From in Dict.keys():
-                wordapp.ActiveWindow.ActivePane.View.SeekView =win32.constants.wdSeekMainDocument
-                wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll) 
-                wordapp.ActiveWindow.ActivePane.View.SeekView = win32.constants.wdSeekCurrentPageHeader
-                wordapp.Selection.Find.Execute(From, False, False, False, False, False, True, win32.constants.wdFindContinue, False, Dict[From], win32.constants.wdReplaceAll)     
-            
-            wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "1")
-            wordapp.ActiveDocument.SaveAs(sow_full_file_name)
-            doc.Close(False)
+            sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_directory)
 
             # Add QA vulns to table vulns
             doct = os.path.join(dn,tmp_directory,full_vulns_table_file_name)
