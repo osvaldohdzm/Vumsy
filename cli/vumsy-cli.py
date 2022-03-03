@@ -30,6 +30,7 @@ def main():
     
     parser = argparse.ArgumentParser(description='Web vulnerabilities report generator.')
     parser.add_argument("-j", help='JSON file path', required=True)
+    parser.add_argument("-v", help='Visible Mode',action='store_true')
     args = vars(parser.parse_args())
     analysis_filename = args['j']
     print("Generating report files for {}...\n".format(analysis_filename))
@@ -37,8 +38,7 @@ def main():
     # Opening JSON file
     with open(analysis_filename, encoding='utf-8') as json_file:
         data = json.load(json_file)
-        generate_report(data, visible_mode_win32com =  True, outputs_directory = os.path.join(dn,"outputs"), tmp_directory = os.path.join(dn,"temporary"))
-
+        generate_report(data, visible_mode_win32com =  args['v'], outputs_directory = os.path.join(dn,"outputs"), tmp_directory = os.path.join(dn,"temporary"))
     print("Report files generation successful!")
     
 if __name__ == "__main__":

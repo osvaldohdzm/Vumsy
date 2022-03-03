@@ -24,15 +24,17 @@ import win32clipboard as clip
 import win32com
 import win32com.client as win32
 import xmltojson
+from datetime import date, datetime, time, timedelta
 from win32com.client import constants
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 from docx import Document
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 from docx.shared import RGBColor
 from num2words import num2words
 from os.path import abspath
+import locale
+locale.setlocale(locale.LC_TIME, 'es_MX.UTF-8')
 
 # Program constants definition
 constants ={} 
@@ -526,6 +528,22 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
               fh.write(base64.b64decode(data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"]))
               fh.close()
               data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"] = image            
+   
+   # Date formats manipulation
+   start_date_planned = datetime.strptime(data["<<start_date_planned>>"], '%d/%m/%Y')
+   data["<<start_date_planned>>"] = str(start_date_planned.strftime("%d de %B de %Y"))   
+   due_date = datetime.strptime(data["<<due_date>>"], '%d/%m/%Y')
+   data["<<due_date>>"] = str(due_date.strftime("%d de %B de %Y"))   
+   start_date = datetime.strptime(data["<<start_date>>"], '%d/%m/%Y')
+   data["<<start_date>>"] = str(start_date.strftime("%d de %B de %Y"))   
+   request_date = datetime.strptime(data["<<request_date>>"], '%d/%m/%Y')
+   data["<<request_date>>"] = str(request_date.strftime("%d de %B de %Y"))   
+   finish_date = datetime.strptime(data["<<finish_date>>"], '%d/%m/%Y')
+   data["<<finish_date>>"] = str(finish_date.strftime("%d de %B de %Y"))
+   generation_date = datetime.strptime(data["<<generation_date>>"], '%d/%m/%Y')
+   data["<<date_format_02>>"] = str(generation_date.strftime("%m|%Y"))
+   data["<<request_date_format_01>>"] = str(request_date.strftime("%d de %B de %Y"))
+   data["<<request_date_format_02>>"] = str(request_date.strftime("%d/%m/%Y"))
    
    # No Targets
    data["<<no_targets>>"] = len(data["<<scope>>"])
