@@ -467,19 +467,26 @@ def add_qa_vulnerabilities(wordapp, qa_data):
 def generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory_path, templates_path):
     count = 1
     vulnerabilities_tables = []   
-    for vunl in sorted_asc_vulns:              
+    for vunl in sorted_asc_vulns:
         table_template = os.path.join(templates_path,'template-sre-vulns-table.docx')                
         wordapp = win32.gencache.EnsureDispatch("Word.Application")
         wordapp.Visible = visible_mode_win32com
         wordapp.DisplayAlerts = False
         doc = wordapp.Documents.Open(table_template)
         doc.Activate()
-        for From in vunl.keys(): 
-            wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)   
-            item_replace = vunl[From]
+        for From in vunl.keys():
+            wordapp.Selection.HomeKey(Unit=win32.constants.wdStory) 
+            item_replace = str(vunl[From])
+            if From == "<<vulnerability_ports>>":
+            	try:
+            		item_replace = str(int(vunl[From]))
+            	except ValueError:
+            		print("That's not an int!")
+            elif not vunl[From]: # None
+                item_replace = "-"
+            elif vunl[From] == 0:
+                item_replace = "-"  
             if From != "<<vulnerability_evidence_note>>" and From !="<<vulnerability_evidence_image_path>>" and From !="<<vulnerability_evidences>>":
-                if item_replace == 0:
-                  item_replace = "-"
                 try:
                     wordapp.Selection.Find.Execute(From) 
                     wordapp.Selection.Text = item_replace
@@ -529,6 +536,14 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
               fh.close()
               data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"] = image            
    
+   ## Transforms array lists to one string with /r characters
+   for vuln in data["<<vulnerabilities>>"]:
+       vuln["<<vulnerability_references_string>>"] = '\r'.join(vuln["<<vulnerability_references>>"])
+       vuln.pop("<<vulnerability_references>>", None)
+       vuln["<<vulnerability_paths_string>>"] = '\r'.join(vuln["<<vulnerability_paths>>"])
+       vuln.pop("<<vulnerability_paths>>", None)
+   # "<<analysis_revision_01>>"
+   data["<<analysis_revision_01>>"] = "{:.1f}".format(data["<<analysis_revision_number>>"])
    # Date formats manipulation
    start_date_planned = datetime.strptime(data["<<start_date_planned>>"], '%d/%m/%Y')
    data["<<start_date_planned>>"] = str(start_date_planned.strftime("%d de %B de %Y"))   
