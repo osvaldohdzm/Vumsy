@@ -17,7 +17,7 @@ sys.path.append('../')
 from vumsy_reporting import  *
 
 def main():
-    Art=text2art("vurmsy")
+    Art=text2art("vumsy")
     print(Art)
     print("By Osvaldo HM in TIC DEFENSE")
     print("Starting the Vulnerability Reports Management System...\n")

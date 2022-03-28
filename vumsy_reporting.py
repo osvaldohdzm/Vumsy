@@ -436,8 +436,7 @@ def add_bad_practices(wordapp, bad_practices):
      bad_practices_list = []
      try:
         for item in bad_practices:                           
-           bad_practices_list.append(item) 
-        
+           bad_practices_list.append(item)         
         wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
         wordapp.Selection.Find.Execute('<<bad_practices_list>>')
         wordapp.Selection.Range.ListFormat.ApplyListTemplateWithLevel(ListTemplate = wordapp.ListGalleries(win32.constants.wdBulletGallery).ListTemplates(1), ContinuePreviousList= True, ApplyTo = win32.constants.wdListApplyToWholeList, DefaultListBehavior= win32.constants.wdWord10ListBehavior)
@@ -529,7 +528,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    if data["<<vulnerabilities>>"]:
       for i in range(len(data["<<vulnerabilities>>"])):       
           for k in range(len(data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"])):
-              vulnerability_name = unidecode.unidecode(data["<<vulnerabilities>>"][i]["<<vulnerability_name>>"]).lower().replace(" ", "_")              
+              vulnerability_name = unidecode.unidecode(data["<<vulnerabilities>>"][i]["<<vulnerability_name>>"]).lower().replace(" ", "_").replace("/", "_")               
               image = os.path.join(tmp_directory,"vuln_{}_{}_ev_{}.png".format(str(i+1),vulnerability_name,str(k+1)))           
               fh = open(image, "wb")
               fh.write(base64.b64decode(data["<<vulnerabilities>>"][i]["<<vulnerability_evidences>>"][k]["<<vulnerability_evidence_image_path>>"]))
@@ -931,7 +930,6 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
             wordapp.Selection.Find.Execute('<<recomendation_list>>') 
             wordapp.Selection.Text = '\n'.join(remediation_list)
-
             
             add_qa_vulnerabilities(wordapp, data['<<qa_vulnerabilities>>'])
             add_bad_practices(wordapp, data['<<bad_practices_list>>'])
