@@ -1,4 +1,3 @@
-
 import argparse
 import base64
 import docx
@@ -34,6 +33,7 @@ from docx.shared import RGBColor
 from num2words import num2words
 from os.path import abspath
 import locale
+
 locale.setlocale(locale.LC_TIME, 'es_MX.UTF-8')
 
 # Program constants definition
@@ -372,10 +372,10 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
    '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
    '<<Concordancia_2>>': concordancia_2, 
    '<<URL_Acuerdos_tabla3>>': sow_targets_urls,
-   '<<Realiza_Firmas_de_aceptación>>': data['<<reviewer_01>>'],
+   '<<Realiza_Firmas_de_aceptación>>': data['<<supervisor>>'],
    '<<Concordancia_3>>':concordancia_3})
   
-  sow_template = os.path.join(dn,'templates',data['<<template_name_02>>'])
+  sow_template = os.path.join(dn,'templates',data['<<template_name_sow>>'])
   sow_file_name = 'SOW - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
   sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
   doc = wordapp.Documents.Open(sow_template)
@@ -463,24 +463,23 @@ def add_qa_vulnerabilities(wordapp, qa_data):
   else:
     wordapp.Selection.GoTo(What=win32.constants.wdGoToBookmark, Name = "QABookMark").Delete() 
 
-def generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory_path, templates_path):
+def generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory_path, template_path):
     count = 1
     vulnerabilities_tables = []   
-    for vunl in sorted_asc_vulns:
-        table_template = os.path.join(templates_path,'template-sre-vulns-table.docx')                
+    for vunl in sorted_asc_vulns:                     
         wordapp = win32.gencache.EnsureDispatch("Word.Application")
         wordapp.Visible = visible_mode_win32com
         wordapp.DisplayAlerts = False
-        doc = wordapp.Documents.Open(table_template)
+        doc = wordapp.Documents.Open(template_path)
         doc.Activate()
         for From in vunl.keys():
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory) 
             item_replace = str(vunl[From])
             if From == "<<vulnerability_ports>>":
-            	try:
-            		item_replace = str(int(vunl[From]))
-            	except ValueError:
-            		print("That's not an int!")
+                try:
+                    item_replace = str(int(vunl[From]))
+                except ValueError:
+                    print("That's not an int!")
             elif not vunl[From]: # None
                 item_replace = "-"
             elif vunl[From] == 0:
@@ -570,13 +569,13 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    #with open(analysis_filename, encoding='utf-8') as json_file:
    #    data = json.loads(json.load(json_file))
    
-   #template_file_path = os.path.join(dn,'templates',data['<<template_name_01>>'])
+   #template_file_path = os.path.join(dn,'templates',data['<<template_name_dwa>>'])
    dn = os.path.dirname(os.path.abspath(sys.argv[0]))
    
    
    
 
-   template_file_path = os.path.join(dn,'templates',data['<<template_name_01>>']).replace('\r', '')   
+   template_file_path = os.path.join(dn,'templates',data['<<template_name_dwa>>']).replace('\r', '')   
    name_file = data['<<analysis_id>>'] + ' ' + data ['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>'] + ".docx"
    base_name_file = data['<<analysis_id>>'] + ' ' + data ['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']
    name_file = name_file.replace("/", "-").replace('\r', '')
@@ -748,8 +747,8 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             vulns_table_file_name = vulns_table_file_name.replace("/", "-").replace('\r', '')
             full_vulns_table_file_name = os.path.join(dn,tmp_directory,vulns_table_file_name).replace('\r', '')
             tmp_directory_path = os.path.join(dn,tmp_directory)
-            templates_path = os.path.join(dn,'templates')   
-            vulnerabilities_tables = generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory, templates_path)
+            table_template = os.path.join(dn,'templates',data ['<<template_name_vuln_table>>'])   
+            vulnerabilities_tables = generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory, table_template)
             merge_docx1(vulnerabilities_tables,vulns_table_file_name, visible_mode_win32com = visible_mode_win32com, output_folder = os.path.join(dn,tmp_directory))
             
             doca = wordapp.Documents.Open(os.path.join(dn,tmp_directory,name_file))
