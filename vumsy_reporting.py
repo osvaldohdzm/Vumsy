@@ -264,6 +264,7 @@ def merge_docx1(files, final_docx_name, visible_mode_win32com, output_folder):
     # Start word application
     word = win32.gencache.EnsureDispatch("Word.Application")
     word.Visible = visible_mode_win32com
+    
     word.DisplayAlerts = False
     # New blank document
     new_document = word.Documents.Add()
@@ -285,48 +286,51 @@ def merge_docx1(files, final_docx_name, visible_mode_win32com, output_folder):
     new_document.SaveAs(os.path.join(output_folder,final_docx_name))    
     new_document.Close(False)
     doc = docx.Document(os.path.join(output_folder,final_docx_name))
+    
     for table in doc.tables:
-        shading_elm_1 = parse_xml(r'<w:shd {} w:fill="4C4C4C"/>'.format(nsdecls('w')))
-        table.cell(0, 0)._tc.get_or_add_tcPr().append(shading_elm_1)
-        shading_elm_2 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
-        table.cell(0, 1)._tc.get_or_add_tcPr().append(shading_elm_2)
-        if table.cell(0, 2).text != "-":
-           risk_score_table = float(table.cell(0, 2).text)
-        else:
-           risk_score_table = 0    
-        paragraph = table.cell(0, 2).paragraphs[0]
-        paragraph.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-        if(risk_score_table >= 0.1 and  risk_score_table <= 3.9):
-            shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FFFF00"/>'.format(nsdecls('w')))
-            table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-        elif(risk_score_table >= 4.0 and  risk_score_table <= 6.9):
-            shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FFC000"/>'.format(nsdecls('w')))
-            table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-        elif(risk_score_table >= 7.0 and  risk_score_table <= 8.9):
-            for run in paragraph.runs:
-                run.font.color.rgb = RGBColor(255,255,255)
-            shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FF0000"/>'.format(nsdecls('w')))
-            table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-        elif(risk_score_table >= 9.0 and  risk_score_table <= 10): 
-            for run in paragraph.runs:
-                run.font.color.rgb = RGBColor(255,255,255)           
-            shading_elm_3 = parse_xml(r'<w:shd {} w:fill="C00000"/>'.format(nsdecls('w')))
-            table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-        elif(risk_score_table <= 0): 
-            for run in paragraph.runs:
-                run.font.color.rgb = RGBColor(255,255,255)  
-            shading_elm_3 = parse_xml(r'<w:shd {} w:fill="ADADAD"/>'.format(nsdecls('w')))
-            table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
-        shading_elm_4 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
-        table.cell(5, 0)._tc.get_or_add_tcPr().append(shading_elm_4)
-        shading_elm_5 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
-        table.cell(6, 0)._tc.get_or_add_tcPr().append(shading_elm_5)
-        shading_elm_6 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
-        table.cell(7, 0)._tc.get_or_add_tcPr().append(shading_elm_6)
-        shading_elm_7 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
-        table.cell(8, 0)._tc.get_or_add_tcPr().append(shading_elm_7)
-        logging.info("Celda 0,0 tabla {}".format(table.cell(0, 0).text))
-    doc.save(os.path.join(output_folder,final_docx_name))
+        try:
+            shading_elm_1 = parse_xml(r'<w:shd {} w:fill="4C4C4C"/>'.format(nsdecls('w')))
+            table.cell(0, 0)._tc.get_or_add_tcPr().append(shading_elm_1)
+            shading_elm_2 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
+            table.cell(0, 1)._tc.get_or_add_tcPr().append(shading_elm_2)
+            if table.cell(0, 2).text != "-":
+               risk_score_table = float(table.cell(0, 2).text)
+            else:
+               risk_score_table = 0    
+            paragraph = table.cell(0, 2).paragraphs[0]
+            paragraph.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+            if(risk_score_table >= 0.1 and  risk_score_table <= 3.9):
+                shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FFFF00"/>'.format(nsdecls('w')))
+                table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
+            elif(risk_score_table >= 4.0 and  risk_score_table <= 6.9):
+                shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FFC000"/>'.format(nsdecls('w')))
+                table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
+            elif(risk_score_table >= 7.0 and  risk_score_table <= 8.9):
+                for run in paragraph.runs:
+                    run.font.color.rgb = RGBColor(255,255,255)
+                shading_elm_3 = parse_xml(r'<w:shd {} w:fill="FF0000"/>'.format(nsdecls('w')))
+                table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
+            elif(risk_score_table >= 9.0 and  risk_score_table <= 10): 
+                for run in paragraph.runs:
+                    run.font.color.rgb = RGBColor(255,255,255)           
+                shading_elm_3 = parse_xml(r'<w:shd {} w:fill="C00000"/>'.format(nsdecls('w')))
+                table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
+            elif(risk_score_table <= 0): 
+                for run in paragraph.runs:
+                    run.font.color.rgb = RGBColor(255,255,255)  
+                shading_elm_3 = parse_xml(r'<w:shd {} w:fill="ADADAD"/>'.format(nsdecls('w')))
+                table.cell(0, 2)._tc.get_or_add_tcPr().append(shading_elm_3)
+            shading_elm_4 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
+            table.cell(5, 0)._tc.get_or_add_tcPr().append(shading_elm_4)
+            shading_elm_5 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
+            table.cell(6, 0)._tc.get_or_add_tcPr().append(shading_elm_5)
+            shading_elm_6 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
+            table.cell(7, 0)._tc.get_or_add_tcPr().append(shading_elm_6)
+            shading_elm_7 = parse_xml(r'<w:shd {} w:fill="717171"/>'.format(nsdecls('w')))
+            table.cell(8, 0)._tc.get_or_add_tcPr().append(shading_elm_7)
+            doc.save(os.path.join(output_folder,final_docx_name))
+        except:
+            doc.save(os.path.join(output_folder,final_docx_name))    
 
 def split_text_before_point(text):
 
@@ -372,7 +376,13 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
    '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
    '<<Concordancia_2>>': concordancia_2, 
    '<<URL_Acuerdos_tabla3>>': sow_targets_urls,
-   '<<Realiza_Firmas_de_aceptación>>': data['<<supervisor>>'],
+   '<<supervisor>>': data['<<supervisor>>'],
+   '<<supervisor_charge>>': data['<<supervisor_charge>>'],
+   '<<supervisor_charge>>': data['<<supervisor_charge>>'],
+   '<<client_responsible>>': data['<<client_responsible>>'],
+   '<<client_responsible_charge>>': data['<<client_responsible_charge>>'],
+   '<<client_company>>': data['<<client_company>>'],
+   '<<company>>': data['<<company>>'],   
    '<<Concordancia_3>>':concordancia_3})
   
   sow_template = os.path.join(dn,'templates',data['<<template_name_sow>>'])
@@ -719,7 +729,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
            print(e)  
    
 
- 
+   
    wordapp.Selection.GoTo(win32.constants.wdGoToPage, win32.constants.wdGoToAbsolute, "2")
 
 
@@ -968,6 +978,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
         except Exception as e: 
            print(e) 
    else:
+    
     sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_directory)
     wordapp.Quit()
 

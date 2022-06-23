@@ -17,6 +17,12 @@ Example in cli folder run:
 python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\sirgeqa.sre.gob.mx 2021-11-05.json"
 ```
 
+Run and view GUI office:
+
+```py
+python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\sirgeqa.sre.gob.mx 2021-11-05.json" -v
+```
+
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
 
