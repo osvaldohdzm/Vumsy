@@ -14,13 +14,13 @@ pip install -r /path/to/requirements.txt
 Example in cli folder run:
 
 ```py
-python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\sirgeqa.sre.gob.mx 2021-11-05.json"
+python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\file.json"
 ```
 
 Run and view GUI office:
 
 ```py
-python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\sirgeqa.sre.gob.mx 2021-11-05.json" -v
+python .\vumsy-cli.py -j "C:\Users\User\Desktop\vumsy\cli\analysis\file.json" -v
 ```
 
 ## Support
