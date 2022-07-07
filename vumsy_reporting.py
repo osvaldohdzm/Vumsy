@@ -351,14 +351,43 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
   dn = os.path.dirname(os.path.abspath(sys.argv[0]))
 
   # SOW GENERATION
-  no_targets = data["<<no_targets>>"]
-  concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
-  concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
-  concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
-
-  
-  
-  Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
+   
+  if data["<<analysis_type>>"] == "DYNAMIC VULNERABILITIES ANALYSIS OF DESKTOP APPLICATION":
+    no_targets = data["<<no_targets>>"]
+    concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
+    concordancia_2 =  'de las aplicaciones' if int(no_targets) > 1 else 'de la aplicación'
+    concordancia_3 =  'a las aplicaciones' if int(no_targets) > 1 else 'a la aplicación'
+    Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
+   '<<Fecha_mes_y_año>>':data['<<date_format_02>>'], 
+   '<<Folio>>':data['<<analysis_id>>'],
+   '<<Fecha_ddmmaa_encabezado>>':data['<<request_date_format_02>>'],
+   '<<request_folio>>':data['<<request_folio>>'],
+   '<<Folio>>':data['<<analysis_id>>'],
+   '<<analysis_version_format_02>>': data['<<analysis_version_format_02>>'],
+   '<<Concordancia_1>>':concordancia_1,
+   '<<Nombre_del_aplicativo_En_antecedentes>>':data['<<name_app>>'],
+   '<<Nombre_del_servidor>>':data['<<app_component>>'].replace("http://", "").replace("https://", ""),
+   '<<Nombre_del_aplicativo_Tabla>>':data['<<name_app>>'], 
+   '<<Fechas_de_inicio>>': data['<<start_date>>'],
+   '<<Fecha_Fin>>': data['<<finish_date>>'],
+   '<<Fecha_tentativa_de_inicio>>': data['<<start_date_planned>>'],
+   '<<Fecha_límite_para_la_actividad>>': data['<<due_date>>'], 
+   '<<Concordancia_2>>': concordancia_2, 
+   '<<URL_Acuerdos_tabla3>>': sow_targets_urls,
+   '<<supervisor>>': data['<<supervisor>>'],
+   '<<supervisor_charge>>': data['<<supervisor_charge>>'],
+   '<<supervisor_charge>>': data['<<supervisor_charge>>'],
+   '<<client_responsible>>': data['<<client_responsible>>'],
+   '<<client_responsible_charge>>': data['<<client_responsible_charge>>'],
+   '<<client_company>>': data['<<client_company>>'],
+   '<<company>>': data['<<company>>'],   
+   '<<Concordancia_3>>':concordancia_3})
+  else:
+    no_targets = data["<<no_targets>>"]
+    concordancia_1 =  'a los sistemas' if int(no_targets) > 1 else 'al sistema'
+    concordancia_2 =  'de los portales' if int(no_targets) > 1 else 'del portal'
+    concordancia_3 =  'a los portales' if int(no_targets) > 1 else 'al portal'
+    Dict = dict({'<<Nombre_del_aplicativo_portada>>': str(data['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']),
    '<<Fecha_mes_y_año>>':data['<<date_format_02>>'], 
    '<<Folio>>':data['<<analysis_id>>'],
    '<<Fecha_ddmmaa_encabezado>>':data['<<request_date_format_02>>'],
@@ -368,7 +397,7 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
    '<<analysis_version_format_02>>': data['<<analysis_version_format_02>>'],
    '<<Concordancia_1>>':concordancia_1,
    '<<Nombre_del_aplicativo_En_antecedentes>>':data['<<name_app>>'],
-   '<<Nombre_del_servidor>>':data['<<app_url>>'].replace("http://", "").replace("https://", ""),
+   '<<Nombre_del_servidor>>':data['<<app_component>>'].replace("http://", "").replace("https://", ""),
    '<<Nombre_del_aplicativo_Tabla>>':data['<<name_app>>'], 
    '<<Fechas_de_inicio>>': data['<<start_date>>'],
    '<<Fecha_Fin>>': data['<<finish_date>>'],
@@ -385,7 +414,7 @@ def sow_generation(wordapp, data, sow_targets_ips_string, sow_targets_urls, tmp_
    '<<company>>': data['<<company>>'],   
    '<<Concordancia_3>>':concordancia_3})
   
-  sow_template = os.path.join(dn,'templates',data['<<template_name_sow>>'])
+  sow_template = os.path.join(dn,'templates',data['<<sow_report_template_filename>>'])
   sow_file_name = 'SOW - {}-{} {}'.format(data['<<analysis_id>>'],data['<<name_app>>'],data['<<analysis_version_format_01>>'])
   sow_full_file_name = os.path.join(dn,tmp_directory,sow_file_name+'.docx')
   doc = wordapp.Documents.Open(sow_template)
@@ -579,13 +608,13 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    #with open(analysis_filename, encoding='utf-8') as json_file:
    #    data = json.loads(json.load(json_file))
    
-   #template_file_path = os.path.join(dn,'templates',data['<<template_name_dwa>>'])
+   #template_file_path = os.path.join(dn,'templates',data['<<main_report_template_filename>>'])
    dn = os.path.dirname(os.path.abspath(sys.argv[0]))
    
    
    
 
-   template_file_path = os.path.join(dn,'templates',data['<<template_name_dwa>>']).replace('\r', '')   
+   template_file_path = os.path.join(dn,'templates',data['<<main_report_template_filename>>']).replace('\r', '')   
    name_file = data['<<analysis_id>>'] + ' ' + data ['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>'] + ".docx"
    base_name_file = data['<<analysis_id>>'] + ' ' + data ['<<name_app>>'] + ' - ' + data['<<analysis_version_format_01>>']
    name_file = name_file.replace("/", "-").replace('\r', '')
@@ -609,40 +638,64 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
    try:
       wordapp.Selection.Find.Execute("<<scope_table>>") 
       if data['<<scope>>']:
-        for target in data['<<scope>>']:          
-          wordapp.ActiveDocument.Tables.Add(Range=wordapp.Selection.Range, NumRows=4, NumColumns= 2, DefaultTableBehavior=win32.constants.wdWord9TableBehavior, AutoFitBehavior= win32.constants.wdAutoFitFixed)
-          wordapp.Selection.Tables(1).PreferredWidthType = win32.constants.wdPreferredWidthPoints
-          wordapp.Selection.Tables(1).PreferredWidth = 368.503937008 # 13 Centimeters to Point
-          wordapp.Selection.Tables(1).Columns(1).SetWidth(ColumnWidth=141.5, RulerStyle= win32.constants.wdAdjustNone)
-          wordapp.Selection.Tables(1).Rows.Alignment = win32.constants.wdAlignRowCenter   
-          # Format cells
-          wordapp.Selection.Tables(1).Cell(1, 1).Range.Shading.BackgroundPatternColor = -570376193
-          wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Bold = win32.constants.wdToggle
-          wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Color = rgbToInt((255,255,255)) 
-          wordapp.Selection.Tables(1).Cell(2, 1).Range.Shading.BackgroundPatternColor = -570376193
-          wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Bold = win32.constants.wdToggle
-          wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Color = rgbToInt((255,255,255)) 
-          wordapp.Selection.Tables(1).Cell(3, 1).Range.Shading.BackgroundPatternColor = -570376193
-          wordapp.Selection.Tables(1).Cell(3, 1).Range.Font.Bold = win32.constants.wdToggle
-          wordapp.Selection.Tables(1).Cell(3, 1).Range.Font.Color = rgbToInt((255,255,255)) 
-          wordapp.Selection.Tables(1).Cell(4, 1).Range.Shading.BackgroundPatternColor = -570376193
-          wordapp.Selection.Tables(1).Cell(4, 1).Range.Font.Bold = win32.constants.wdToggle
-          wordapp.Selection.Tables(1).Cell(4, 1).Range.Font.Color =  rgbToInt((255,255,255)) 
-          # Populate cells
-          wordapp.Selection.Tables(1).Cell(1, 1).Range.Text = "Dirección IP"
-          wordapp.Selection.Tables(1).Cell(2, 1).Range.Text = "URL"
-          wordapp.Selection.Tables(1).Cell(3, 1).Range.Text = "Descripción"
-          wordapp.Selection.Tables(1).Cell(4, 1).Range.Text = "Sistema Operativo"
-          wordapp.Selection.Tables(1).Cell(1, 2).Range.Text = target["<<target_ip>>"]
-          wordapp.Selection.Tables(1).Cell(2, 2).Range.Text = target["<<target_url>>"]
-          wordapp.Selection.Tables(1).Cell(3, 2).Range.Text = target["<<target_description>>"]
-          wordapp.Selection.Tables(1).Cell(4, 2).Range.Text = target["<<target_operative_system>>"]
-                  
-          wordapp.Selection.MoveDown(Unit=win32.constants.wdParagraph, Count=12)
-          wordapp.Selection.TypeText(Text="\r\n")
-          
-          sow_target_url_list.append(target["<<target_url>>"])
-          sow_target_ip_list.append(target["<<target_ip>>"])
+        for target in data['<<scope>>']: 
+            try:   
+               
+               if data["<<analysis_type>>"] == "DYNAMIC VULNERABILITIES ANALYSIS OF DESKTOP APPLICATION":
+                 # Create table structure
+                 wordapp.ActiveDocument.Tables.Add(Range=wordapp.Selection.Range, NumRows=2, NumColumns= 2, DefaultTableBehavior=win32.constants.wdWord9TableBehavior, AutoFitBehavior= win32.constants.wdAutoFitFixed)
+                 wordapp.Selection.Tables(1).PreferredWidthType = win32.constants.wdPreferredWidthPoints
+                 wordapp.Selection.Tables(1).PreferredWidth = 368.503937008 # 13 Centimeters to Point
+                 wordapp.Selection.Tables(1).Columns(1).SetWidth(ColumnWidth=141.5, RulerStyle= win32.constants.wdAdjustNone)
+                 wordapp.Selection.Tables(1).Rows.Alignment = win32.constants.wdAlignRowCenter   
+                 # Format cells
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Color = rgbToInt((255,255,255)) 
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Color = rgbToInt((255,255,255)) 
+                 # Populate cells
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Text = "Descripción"
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Text = "Sistema Operativo"
+                 wordapp.Selection.Tables(1).Cell(1, 2).Range.Text = target["<<target_description>>"]
+                 wordapp.Selection.Tables(1).Cell(2, 2).Range.Text = target["<<target_operative_system>>"]
+                 sow_target_url_list.append(data["<<app_component>>"])
+               else:
+                 # Create table structure
+                 wordapp.ActiveDocument.Tables.Add(Range=wordapp.Selection.Range, NumRows=4, NumColumns= 2, DefaultTableBehavior=win32.constants.wdWord9TableBehavior, AutoFitBehavior= win32.constants.wdAutoFitFixed)
+                 wordapp.Selection.Tables(1).PreferredWidthType = win32.constants.wdPreferredWidthPoints
+                 wordapp.Selection.Tables(1).PreferredWidth = 368.503937008 # 13 Centimeters to Point
+                 wordapp.Selection.Tables(1).Columns(1).SetWidth(ColumnWidth=141.5, RulerStyle= win32.constants.wdAdjustNone)
+                 wordapp.Selection.Tables(1).Rows.Alignment = win32.constants.wdAlignRowCenter   
+                 # Format cells
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Font.Color = rgbToInt((255,255,255)) 
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Font.Color = rgbToInt((255,255,255)) 
+                 wordapp.Selection.Tables(1).Cell(3, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(3, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(3, 1).Range.Font.Color = rgbToInt((255,255,255)) 
+                 wordapp.Selection.Tables(1).Cell(4, 1).Range.Shading.BackgroundPatternColor = -570376193
+                 wordapp.Selection.Tables(1).Cell(4, 1).Range.Font.Bold = win32.constants.wdToggle
+                 wordapp.Selection.Tables(1).Cell(4, 1).Range.Font.Color =  rgbToInt((255,255,255)) 
+                 # Populate cells
+                 wordapp.Selection.Tables(1).Cell(1, 1).Range.Text = "Dirección IP"
+                 wordapp.Selection.Tables(1).Cell(2, 1).Range.Text = "URL"
+                 wordapp.Selection.Tables(1).Cell(3, 1).Range.Text = "Descripción"
+                 wordapp.Selection.Tables(1).Cell(4, 1).Range.Text = "Sistema Operativo"
+                 wordapp.Selection.Tables(1).Cell(1, 2).Range.Text = target["<<target_ip>>"]
+                 wordapp.Selection.Tables(1).Cell(2, 2).Range.Text = target["<<target_url>>"]
+                 wordapp.Selection.Tables(1).Cell(3, 2).Range.Text = target["<<target_description>>"]
+                 wordapp.Selection.Tables(1).Cell(4, 2).Range.Text = target["<<target_operative_system>>"]
+                 sow_target_url_list.append(target["<<target_url>>"])
+                 sow_target_ip_list.append(target["<<target_ip>>"])                       
+               wordapp.Selection.MoveDown(Unit=win32.constants.wdParagraph, Count=12)
+               wordapp.Selection.TypeText(Text="\r\n")
+            except Exception as e:
+               print(e) 
    except Exception as e:
       print(e) 
 
@@ -655,11 +708,15 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
       sow_targets_ips_string  = ", ".join(sow_targets_ips_dict[:-1]) +" y "+sow_targets_ips_dict[-1]
    elif len(sow_targets_ips_dict) == 1:
       sow_targets_ips_string = sow_target_ip_list[0]
+   else:
+      sow_targets_ips_string = ""
 
    if len(sow_targets_urls_dict) > 1:      
       sow_targets_urls  = "<coma>".join(sow_targets_urls_dict[:-1]) +"<space>"+sow_targets_urls_dict[-1]
    elif len(sow_targets_urls_dict) == 1:
       sow_targets_urls = sow_target_url_list[0]
+   else:
+      sow_targets_urls = ""
    
 
    data['<<previous_analysis_version_format_03>>'] = ''
@@ -757,7 +814,7 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             vulns_table_file_name = vulns_table_file_name.replace("/", "-").replace('\r', '')
             full_vulns_table_file_name = os.path.join(dn,tmp_directory,vulns_table_file_name).replace('\r', '')
             tmp_directory_path = os.path.join(dn,tmp_directory)
-            table_template = os.path.join(dn,'templates',data ['<<template_name_vuln_table>>'])   
+            table_template = os.path.join(dn,'templates',data ['<<vuln_table_template_filename>>'])   
             vulnerabilities_tables = generate_vulns_tablefile(wordapp, visible_mode_win32com, sorted_asc_vulns, full_vulns_table_file_name, tmp_directory, table_template)
             merge_docx1(vulnerabilities_tables,vulns_table_file_name, visible_mode_win32com = visible_mode_win32com, output_folder = os.path.join(dn,tmp_directory))
             
@@ -786,16 +843,14 @@ def generate_report(data,visible_mode_win32com,tmp_directory, outputs_directory)
             # Go to start document
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
             wordapp.Selection.Find.Execute('<<level_max>>') 
-            wordapp.Selection.Font.Bold = True 
-            
+            wordapp.Selection.Font.Bold = True             
             
             for item in risk_list:
-              risk_resume_list.append(item.replace("Un atacante podría ", "").replace(".", ""))  
+              risk_resume_list.append(item.replace("Un atacante podría ", "").replace(".", ""))             
 
             wordapp.Selection.HomeKey(Unit=win32.constants.wdStory)
             wordapp.Selection.Find.Execute('<<risk_resume_list>>')
-            logging.info("Debug point 1")
-            
+            logging.info("Debug point 1")            
             wordapp.Selection.Text = ', '.join(risk_resume_list)
             
             # Dictionary count
